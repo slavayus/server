@@ -11,11 +11,8 @@ public class People extends Man implements Botherable, Missable, Chatable,Compar
     private List<Botherable> bother = new ArrayList<>();
     private List<Chatable> chat = new ArrayList<>();
 
-    public People(String name) {
-        super(name);
-    }
-    public People(){
-
+    public People(int age , String name) {
+        super(age, name);
     }
 
 

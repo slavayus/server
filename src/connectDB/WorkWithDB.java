@@ -3,12 +3,14 @@ package connectDB;
 
 import DataFromClitent.Command;
 import old.school.Man;
+import old.school.People;
 import org.postgresql.ds.PGConnectionPoolDataSource;
 
 import javax.sql.PooledConnection;
 import java.io.*;
 import java.sql.*;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
 
@@ -26,6 +28,10 @@ public class WorkWithDB {
 
     private static final String INSERT_PEOPLE_QUERY =
             "INSERT INTO PEOPLE(AGE, NAME) VALUES (?,?);";
+    private static final String REMOVE_PEOPLE_QUERY =
+            "DELETE FROM PEOPLE WHERE id = ?";
+    private static final String UPDATE_PEOPLE_NAME_QUERY =
+            "UPDATE PEOPLE SET name = ?;";
 
     WorkWithDB() {
     }
@@ -37,7 +43,7 @@ public class WorkWithDB {
     }
 
 
-    public void executeCommand() {
+    public MessageToClient executeCommand() {
         try {
             Connection connection = getConnection();
             Statement statement = connection.createStatement();
@@ -46,27 +52,69 @@ public class WorkWithDB {
 
             deserializeInputData();
 
-            //true - data in DB and data from client is equals
-            boolean state = checkOldData(statement);
-
-            int modifiedRow = modifyDataInDB(connection);
+            return new MessageToClient(checkOldData(statement), modifyDataInDB(connection), getNewDataForClient(statement));
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
+        return null;
+    }
+
+    private Map<String, Man> getNewDataForClient(Statement statement) {
+        Map<String, Man> dataFromDB = new LinkedHashMap<>();
+        try {
+            ResultSet resultSet = statement.executeQuery("SELECT * FROM people");
+            while (resultSet.next()) {
+                dataFromDB.put((String.valueOf(resultSet.getInt(1))), new People(resultSet.getInt(2), resultSet.getString(3)));
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        return dataFromDB;
     }
 
     private int modifyDataInDB(Connection connection) {
         int updateRow = -1;
         switch (command) {
             case UPDATE:
-//                updateRow = updateData();
+                updateRow = updateData(connection);
                 break;
             case REMOVE:
-//                updateRow = removeData();
+                updateRow = removeData(connection);
                 break;
             case INSERT:
                 updateRow = insertData(connection);
                 break;
+        }
+        return updateRow;
+    }
+
+    private int updateData(Connection connection) {
+        int updateRow = -1;
+        try {
+            connection.setAutoCommit(false);
+            PreparedStatement updateStatement = connection.prepareStatement(UPDATE_PEOPLE_NAME_QUERY);
+            for (Map.Entry<String, Man> entry : newData.entrySet()) {
+                updateStatement.setString(1, entry.getValue().getName());
+            }
+            connection.commit();
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        return 0;
+    }
+
+    private int removeData(Connection connection) {
+        int updateRow = -1;
+        try {
+            connection.setAutoCommit(false);
+            PreparedStatement preparedStatement = connection.prepareStatement(REMOVE_PEOPLE_QUERY);
+            for (Map.Entry<String, Man> entry : newData.entrySet()) {
+                preparedStatement.setInt(1, Integer.parseInt(entry.getKey()));
+                updateRow += preparedStatement.executeUpdate();
+            }
+            connection.commit();
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
         }
         return updateRow;
     }
@@ -78,20 +126,21 @@ public class WorkWithDB {
             connection.setAutoCommit(false);
             PreparedStatement preparedStatement = connection.prepareStatement(INSERT_PEOPLE_QUERY);
             for (Map.Entry<String, Man> entry : newData.entrySet()) {
-                preparedStatement.setInt(1,entry.getValue().getAge());
+                preparedStatement.setInt(1, entry.getValue().getAge());
                 preparedStatement.setString(2, entry.getValue().getName());
                 updateRow += preparedStatement.executeUpdate();
             }
+            connection.commit();
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
         return updateRow;
     }
 
-
+    //true - data in DB and data from client is equals
     private boolean checkOldData(Statement statement) {
         try {
-            int size = statement.executeUpdate("SELECT count(*) FROM people_id_seq;");
+            int size = statement.executeUpdate("SELECT count(*) FROM people;");
 
             ResultSet resultSet = statement.executeQuery("SELECT * FROM people;");
 
@@ -99,10 +148,9 @@ public class WorkWithDB {
                 return false;
             }
 
-            Iterator<Map.Entry<String, Man>> iterator = family.entrySet().iterator();
+
             while (resultSet.next()) {
-                Map.Entry<String, Man> entry = iterator.next();
-                if (!resultSet.getString(1).equals(entry.getKey())) {
+                if (!family.containsKey(resultSet.getString(1))) {
                     return false;
                 }
             }

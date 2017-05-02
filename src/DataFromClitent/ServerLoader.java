@@ -1,9 +1,9 @@
 package DataFromClitent;
 
+import connectDB.MessageToClient;
 import connectDB.WorkWithDB;
 import old.school.People;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -37,7 +37,11 @@ public class ServerLoader {
 
                     String msgFromClient = new String(dataFromClient.array(), 0, dataFromClient.position());
 
-                    analysisMsgFromClient(msgFromClient,dataFromClient);
+
+                    MessageToClient messageToClient = analysisMsgFromClient(msgFromClient,dataFromClient);
+                    if(messageToClient!=null){
+                        messageToClient.sendData(serverSocket, socketAddress);
+                    }
 
 //                    ByteBuffer dataToClient = ByteBuffer.wrap(("Echo: " + msgFromClient).getBytes());
 //                    serverSocket.send(dataToClient, socketAddress);
@@ -53,7 +57,7 @@ public class ServerLoader {
         }
     }
 
-    private static void analysisMsgFromClient(String msgFromClient, ByteBuffer dataFromClient) throws IOException {
+    private static MessageToClient analysisMsgFromClient(String msgFromClient, ByteBuffer dataFromClient) throws IOException {
         if(msgFromClient.equals("old")){
             typeOfData = Data.OLD;
         }
@@ -75,8 +79,9 @@ public class ServerLoader {
         if (msgFromClient.equals("end")) {
             typeOfData = Data.NEW;
             WorkWithDB workWithDB = new WorkWithDB(oldData,newData,command);
-            workWithDB.executeCommand();
+            return workWithDB.executeCommand();
         }
 
+        return null;
     }
 }

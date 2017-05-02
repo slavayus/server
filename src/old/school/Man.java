@@ -7,14 +7,15 @@ import java.io.Serializable;
  */
 public abstract class Man implements Serializable{
     protected String name;
-    protected byte age;
+    protected int age;
 
     protected Man(String name) {
         setName(name);
     }
 
-    protected Man() {
-
+    protected Man(int age, String name) {
+        setAge(age);
+        setName(name);
     }
 
     public boolean setName(String name) {
@@ -34,7 +35,7 @@ public abstract class Man implements Serializable{
         return name;
     }
 
-    public boolean setAge(byte age) {
+    public boolean setAge(int age) {
         if(age<0){
             return false;
         }
