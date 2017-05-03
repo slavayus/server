@@ -1,5 +1,6 @@
 package DataFromClitent;
 
+import GUI.Button;
 import connectDB.MessageToClient;
 import connectDB.WorkWithDB;
 import old.school.People;
@@ -19,34 +20,33 @@ import java.util.concurrent.ConcurrentHashMap;
  * Created by slavik on 01.05.17.
  */
 public class ServerLoader {
-    private Map<String,People> family = new ConcurrentHashMap<>();
+    private Map<String, People> family = new ConcurrentHashMap<>();
     private static ByteArrayOutputStream oldData = new ByteArrayOutputStream();
     private static ByteArrayOutputStream newData = new ByteArrayOutputStream();
-    private static Command command;
+    private static Button button;
     private static Data typeOfData = Data.OLD;
 
     public static void main(String[] args) throws UnknownHostException {
         SocketAddress inetSocketAddress = new InetSocketAddress(InetAddress.getLocalHost(), 7007);
         while (true) {
             try (DatagramChannel serverSocket = DatagramChannel.open().bind(inetSocketAddress)) {
-                System.out.println(serverSocket);
+//                System.out.println(serverSocket);
 
-                ByteBuffer dataFromClient = ByteBuffer.allocate(8*1024);
+                ByteBuffer dataFromClient = ByteBuffer.allocate(8 * 1024);
                 while (true) {
                     SocketAddress socketAddress = serverSocket.receive(dataFromClient);
 
                     String msgFromClient = new String(dataFromClient.array(), 0, dataFromClient.position());
 
 
-                    MessageToClient messageToClient = analysisMsgFromClient(msgFromClient,dataFromClient);
-                    if(messageToClient!=null){
+                    MessageToClient messageToClient = analysisMsgFromClient(msgFromClient, dataFromClient);
+                    if (messageToClient != null) {
                         messageToClient.sendData(serverSocket, socketAddress);
                     }
 
 //                    ByteBuffer dataToClient = ByteBuffer.wrap(("Echo: " + msgFromClient).getBytes());
 //                    serverSocket.send(dataToClient, socketAddress);
 //                    System.out.println(new String(dataToClient.array()));
-
                     dataFromClient.clear();
                 }
 
@@ -57,29 +57,38 @@ public class ServerLoader {
         }
     }
 
+    /*
+    oldData, NEW, newData, BUTTON, BUTTON, END
+     */
+
     private static MessageToClient analysisMsgFromClient(String msgFromClient, ByteBuffer dataFromClient) throws IOException {
-        if(msgFromClient.equals("old")){
+
+        if (msgFromClient.equals("END")) {
             typeOfData = Data.OLD;
-        }
-
-        if (typeOfData == Data.NEW){
-            newData.write(dataFromClient.array());
-        }
-
-        if (typeOfData == Data.OLD){
-            oldData.write(dataFromClient.array());
-        }
-
-        if (msgFromClient.equals("command")){
-            command = Command.valueOf(msgFromClient);
-        }
-
-        System.out.println(msgFromClient);
-
-        if (msgFromClient.equals("end")) {
-            typeOfData = Data.NEW;
-            WorkWithDB workWithDB = new WorkWithDB(oldData,newData,command);
+            WorkWithDB workWithDB = new WorkWithDB(oldData, newData, button);
             return workWithDB.executeCommand();
+        }
+
+        try {
+            switch (typeOfData) {
+                case NEW:
+                    newData.write(dataFromClient.array());
+                    break;
+                case OLD:
+                    oldData.write(dataFromClient.array());
+                    break;
+                case BUTTON:
+                    button = Button.valueOf(msgFromClient);
+                    break;
+            }
+        } catch (IllegalArgumentException e) {
+            //do nothing
+        }
+
+        try {
+            typeOfData = Data.valueOf(msgFromClient);
+        } catch (IllegalArgumentException e) {
+//            System.out.println(e.getMessage());
         }
 
         return null;

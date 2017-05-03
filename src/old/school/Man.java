@@ -6,6 +6,7 @@ import java.io.Serializable;
  * Created by slavik on 30.10.16.
  */
 public abstract class Man implements Serializable{
+    private static final long serialVersionUID =2;
     protected String name;
     protected int age;
 

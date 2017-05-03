@@ -5,5 +5,8 @@ package DataFromClitent;
  */
 public enum Data {
     NEW,
-    OLD
+    OLD,
+    BUTTON;
+
+
 }

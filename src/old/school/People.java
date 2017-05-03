@@ -10,6 +10,7 @@ public class People extends Man implements Botherable, Missable, Chatable,Compar
     private List<Missable> miss = new ArrayList<>();
     private List<Botherable> bother = new ArrayList<>();
     private List<Chatable> chat = new ArrayList<>();
+    private static final long serialVersionUID =2;
 
     public People(int age , String name) {
         super(age, name);

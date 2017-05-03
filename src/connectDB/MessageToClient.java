@@ -1,8 +1,8 @@
 package connectDB;
 
-import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream;
 import old.school.Man;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.SocketAddress;
@@ -18,7 +18,7 @@ public class MessageToClient {
     private int modifiedRow;
     private Map<String, Man> dataToClient;
     private ByteBuffer outputData;
-    private static final ByteOutputStream byteOutputStream = new ByteOutputStream();
+    private static final ByteArrayOutputStream byteOutputStream = new ByteArrayOutputStream();
 
     MessageToClient(boolean clientCollectionState, int modifiedRow, Map<String, Man> dataToClient) {
         this.clientCollectionState = clientCollectionState;
@@ -41,19 +41,19 @@ public class MessageToClient {
 
     private void sendClientCollectionState(DatagramChannel serverSocket, SocketAddress socketAddress, ObjectOutputStream objectOutputStream) throws IOException {
         objectOutputStream.writeBoolean(clientCollectionState);
-        outputData = ByteBuffer.wrap(byteOutputStream.getBytes());
+        outputData = ByteBuffer.wrap(byteOutputStream.toByteArray());
         serverSocket.send(outputData,socketAddress);
     }
 
     private void senModifiedRow(DatagramChannel serverSocket, SocketAddress socketAddress, ObjectOutputStream objectOutputStream) throws IOException {
         objectOutputStream.writeInt(modifiedRow);
-        outputData = ByteBuffer.wrap(byteOutputStream.getBytes());
+        outputData = ByteBuffer.wrap(byteOutputStream.toByteArray());
         serverSocket.send(outputData,socketAddress);
     }
 
     private void sendMap(DatagramChannel serverSocket, SocketAddress socketAddress, ObjectOutputStream objectOutputStream) throws IOException {
         objectOutputStream.writeObject(dataToClient);
-        outputData = ByteBuffer.wrap(byteOutputStream.getBytes());
+        outputData = ByteBuffer.wrap(byteOutputStream.toByteArray());
         serverSocket.send(outputData, socketAddress);
 
     }

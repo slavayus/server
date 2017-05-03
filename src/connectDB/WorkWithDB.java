@@ -1,7 +1,7 @@
 package connectDB;
 
 
-import DataFromClitent.Command;
+import GUI.Button;
 import old.school.Man;
 import old.school.People;
 import org.postgresql.ds.PGConnectionPoolDataSource;
@@ -24,22 +24,17 @@ public class WorkWithDB {
     private ByteArrayOutputStream newByteData;
     private Map<String, Man> family;
     private Map<String, Man> newData;
-    private Command command;
+    private Button button;
 
-    private static final String INSERT_PEOPLE_QUERY =
-            "INSERT INTO PEOPLE(AGE, NAME) VALUES (?,?);";
-    private static final String REMOVE_PEOPLE_QUERY =
-            "DELETE FROM PEOPLE WHERE id = ?";
-    private static final String UPDATE_PEOPLE_NAME_QUERY =
-            "UPDATE PEOPLE SET name = ?;";
+
 
     WorkWithDB() {
     }
 
-    public WorkWithDB(ByteArrayOutputStream oldByteData, ByteArrayOutputStream newByteData, Command command) {
+    public WorkWithDB(ByteArrayOutputStream oldByteData, ByteArrayOutputStream newByteData, Button button) {
         this.oldByteData = oldByteData;
         this.newByteData = newByteData;
-        this.command = command;
+        this.button = button;
     }
 
 
@@ -52,6 +47,7 @@ public class WorkWithDB {
 
             deserializeInputData();
 
+            connection.close();
             return new MessageToClient(checkOldData(statement), modifyDataInDB(connection), getNewDataForClient(statement));
         } catch (SQLException e) {
             System.out.println(e.getMessage());
@@ -73,74 +69,16 @@ public class WorkWithDB {
     }
 
     private int modifyDataInDB(Connection connection) {
-        int updateRow = -1;
-        switch (command) {
-            case UPDATE:
-                updateRow = updateData(connection);
-                break;
-            case REMOVE:
-                updateRow = removeData(connection);
-                break;
-            case INSERT:
-                updateRow = insertData(connection);
-                break;
-        }
-        return updateRow;
+        return  button.execute(connection,family,newData);
     }
 
-    private int updateData(Connection connection) {
-        int updateRow = -1;
-        try {
-            connection.setAutoCommit(false);
-            PreparedStatement updateStatement = connection.prepareStatement(UPDATE_PEOPLE_NAME_QUERY);
-            for (Map.Entry<String, Man> entry : newData.entrySet()) {
-                updateStatement.setString(1, entry.getValue().getName());
-            }
-            connection.commit();
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-        }
-        return 0;
-    }
-
-    private int removeData(Connection connection) {
-        int updateRow = -1;
-        try {
-            connection.setAutoCommit(false);
-            PreparedStatement preparedStatement = connection.prepareStatement(REMOVE_PEOPLE_QUERY);
-            for (Map.Entry<String, Man> entry : newData.entrySet()) {
-                preparedStatement.setInt(1, Integer.parseInt(entry.getKey()));
-                updateRow += preparedStatement.executeUpdate();
-            }
-            connection.commit();
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-        }
-        return updateRow;
-    }
-
-
-    private int insertData(Connection connection) {
-        int updateRow = -1;
-        try {
-            connection.setAutoCommit(false);
-            PreparedStatement preparedStatement = connection.prepareStatement(INSERT_PEOPLE_QUERY);
-            for (Map.Entry<String, Man> entry : newData.entrySet()) {
-                preparedStatement.setInt(1, entry.getValue().getAge());
-                preparedStatement.setString(2, entry.getValue().getName());
-                updateRow += preparedStatement.executeUpdate();
-            }
-            connection.commit();
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-        }
-        return updateRow;
-    }
 
     //true - data in DB and data from client is equals
     private boolean checkOldData(Statement statement) {
         try {
-            int size = statement.executeUpdate("SELECT count(*) FROM people;");
+            ResultSet sizeResultSet = statement.executeQuery("SELECT count(*) FROM people;");
+            sizeResultSet.next();
+            int size = sizeResultSet.getInt(1);
 
             ResultSet resultSet = statement.executeQuery("SELECT * FROM people;");
 
@@ -174,17 +112,19 @@ public class WorkWithDB {
     }
 
     private void deserializeInputData() {
+        ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(newByteData.toByteArray());
+        try (ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream)) {
+            newData = (Map<String, Man>) objectInputStream.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            System.out.println(e.getMessage());
+        }
+
         try (ObjectInputStream objectInputStream = new ObjectInputStream(new ByteArrayInputStream(oldByteData.toByteArray()))) {
             family = (Map<String, Man>) objectInputStream.readObject();
         } catch (IOException | ClassNotFoundException e) {
             System.out.println(e.getMessage());
         }
 
-        try (ObjectInputStream objectInputStream = new ObjectInputStream(new ByteArrayInputStream(newByteData.toByteArray()))) {
-            newData = (Map<String, Man>) objectInputStream.readObject();
-        } catch (IOException | ClassNotFoundException e) {
-            System.out.println(e.getMessage());
-        }
     }
 
     private Connection getConnection() throws SQLException {

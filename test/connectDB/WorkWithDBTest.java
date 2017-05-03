@@ -11,7 +11,7 @@ public class WorkWithDBTest {
     @Test
     public void executeCommand() throws Exception {
         WorkWithDB workWithDB = new WorkWithDB();
-        ResultSet resultSet = workWithDB.executeCommand();
+        ResultSet resultSet = (ResultSet) workWithDB.executeCommand();
         while (resultSet.next()){
             System.out.println(resultSet.getString(1));
             System.out.println(resultSet.getString(2));
