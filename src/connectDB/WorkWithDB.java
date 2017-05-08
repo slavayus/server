@@ -40,6 +40,7 @@ public class WorkWithDB {
 
     public MessageToClient executeCommand() {
         try {
+
             Connection connection = getConnection();
             Statement statement = connection.createStatement();
 
@@ -47,8 +48,9 @@ public class WorkWithDB {
 
             deserializeInputData();
 
+            MessageToClient messageToClient =new MessageToClient(checkOldData(statement), modifyDataInDB(connection), getNewDataForClient(statement), Button.getMsgToClient());
             connection.close();
-            return new MessageToClient(checkOldData(statement), modifyDataInDB(connection), getNewDataForClient(statement));
+            return messageToClient;
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
@@ -86,7 +88,7 @@ public class WorkWithDB {
                 return false;
             }
 
-
+//сравнивать все данные, потому что второй клиент может изменить данные.
             while (resultSet.next()) {
                 if (!family.containsKey(resultSet.getString(1))) {
                     return false;
@@ -101,7 +103,7 @@ public class WorkWithDB {
     private void initTable(Statement statement) {
         String createTable = "CREATE TABLE PEOPLE(\n" +
                 "  ID SERIAL PRIMARY KEY,\n" +
-                "  AGE INTEGER CONSTRAINT positive_age CHECK (AGE>0) NOT NULL,\n" +
+                "  AGE INTEGER CONSTRAINT positive_age CHECK (AGE>=0) NOT NULL,\n" +
                 "  NAME TEXT \n" +
                 ");";
         try {

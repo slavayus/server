@@ -7,6 +7,4 @@ public enum Data {
     NEW,
     OLD,
     BUTTON;
-
-
 }

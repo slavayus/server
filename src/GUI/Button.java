@@ -1,9 +1,13 @@
 package GUI;
 
+import com.sun.org.apache.regexp.internal.RE;
 import old.school.Man;
+import org.postgresql.util.PSQLException;
+import org.postgresql.util.ServerErrorMessage;
 
 import java.io.PrintWriter;
 import java.sql.*;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -21,7 +25,7 @@ public enum Button {
      * @param peopleTree Ожидается TreeView<Container> для изменения содержимого
      * @version 3.0
      */
-    REMOVE_GRATER_KEY {
+    REMOVE_GREATER_KEY {
         private int updateRow;
 
         @Override
@@ -29,19 +33,14 @@ public enum Button {
             msgToClient = "Objects removed";
             try {
                 connection.setAutoCommit(false);
-                Statement statement = connection.createStatement(TYPE_FORWARD_ONLY, CONCUR_UPDATABLE);
-                ResultSet resultSet = statement.executeQuery("SELECT ID FROM people");
+                Statement statement = connection.createStatement();
 
-                int key = Integer.parseInt(newData.keySet().iterator().next());
-                while (resultSet.next()) {
-                    if (resultSet.getInt(1) > key) {
-                        resultSet.deleteRow();
-                        updateRow++;
-                    }
-                }
+                int key = Integer.parseInt(newData.entrySet().iterator().next().getKey());
+
+                updateRow = statement.executeUpdate("DELETE FROM people WHERE id> " + key);
                 connection.commit();
             } catch (SQLException e) {
-                e.printStackTrace();
+                msgToClient = "Could not connect to DB";
             } catch (IllegalArgumentException e) {
                 msgToClient = "Key is not correct";
             }
@@ -65,19 +64,14 @@ public enum Button {
             msgToClient = "Objects removed";
             try {
                 connection.setAutoCommit(false);
-                Statement statement = connection.createStatement(TYPE_FORWARD_ONLY, CONCUR_UPDATABLE);
-                ResultSet resultSet = statement.executeQuery("SELECT ID FROM people");
+                Statement statement = connection.createStatement();
 
-                int key = Integer.parseInt(newData.keySet().iterator().next());
-                while (resultSet.next()) {
-                    if (resultSet.getInt(1) < key) {
-                        resultSet.deleteRow();
-                        updateRow++;
-                    }
-                }
+                int key = Integer.parseInt(newData.entrySet().iterator().next().getKey());
+
+                updateRow = statement.executeUpdate("DELETE FROM people WHERE id < " + key);
                 connection.commit();
             } catch (SQLException e) {
-                e.printStackTrace();
+                msgToClient = "Could not connect to DB";
             } catch (IllegalArgumentException e) {
                 msgToClient = "Key is not correct";
             }
@@ -98,11 +92,17 @@ public enum Button {
 
         @Override
         public int execute(Connection connection, Map<String, Man> family, Map<String, Man> newData) {
-            msgToClient = "Object removed";
+            msgToClient = "Objects removed";
             try {
-                return removePeopleQueryExecute(connection, newData);
+                connection.setAutoCommit(false);
+                Statement statement = connection.createStatement();
+
+                int key = Integer.parseInt(newData.entrySet().iterator().next().getKey());
+
+                updateRow = statement.executeUpdate("DELETE FROM people WHERE id = " + key);
+                connection.commit();
             } catch (SQLException e) {
-                e.printStackTrace();
+                msgToClient = "Could not connect to DB";
             } catch (IllegalArgumentException e) {
                 msgToClient = "Key is not correct";
             }
@@ -127,21 +127,15 @@ public enum Button {
             msgToClient = "Objects removed";
             try {
                 connection.setAutoCommit(false);
-                Statement statement = connection.createStatement(TYPE_FORWARD_ONLY, CONCUR_UPDATABLE);
-                ResultSet resultSet = statement.executeQuery("SELECT * FROM people");
+                Statement statement = connection.createStatement();
 
                 int age = newData.values().iterator().next().getAge();
-                while (resultSet.next()) {
-                    if (resultSet.getInt(2) > age) {
-                        resultSet.deleteRow();
-                        updateRow++;
-                    }
-                }
+
+                updateRow = statement.executeUpdate("DELETE FROM people WHERE age > " + age);
+
                 connection.commit();
             } catch (SQLException e) {
-                e.printStackTrace();
-            } catch (IllegalArgumentException e) {
-                msgToClient = "Key is not correct";
+                msgToClient = "Could not connect to DB";
             }
             return updateRow;
         }
@@ -164,21 +158,15 @@ public enum Button {
             msgToClient = "Objects removed";
             try {
                 connection.setAutoCommit(false);
-                Statement statement = connection.createStatement(TYPE_FORWARD_ONLY, CONCUR_UPDATABLE);
-                ResultSet resultSet = statement.executeQuery("SELECT * FROM people");
+                Statement statement = connection.createStatement();
 
                 int age = newData.values().iterator().next().getAge();
-                while (resultSet.next()) {
-                    if (resultSet.getInt(2) == age) {
-                        resultSet.deleteRow();
-                        updateRow++;
-                    }
-                }
+
+                updateRow = statement.executeUpdate("DELETE FROM people WHERE age = " + age);
+
                 connection.commit();
             } catch (SQLException e) {
-                e.printStackTrace();
-            } catch (IllegalArgumentException e) {
-                msgToClient = "Key is not correct";
+                msgToClient = "Could not connect to DB";
             }
             return updateRow;
         }
@@ -193,7 +181,7 @@ public enum Button {
      * @version 3.0
      * @since 1.0
      */
-    REMOVE_LOVER_OBJECT {
+    REMOVE_LOWER_OBJECT {
         private int updateRow;
 
         @Override
@@ -201,21 +189,15 @@ public enum Button {
             msgToClient = "Objects removed";
             try {
                 connection.setAutoCommit(false);
-                Statement statement = connection.createStatement(TYPE_FORWARD_ONLY, CONCUR_UPDATABLE);
-                ResultSet resultSet = statement.executeQuery("SELECT * FROM people");
+                Statement statement = connection.createStatement();
 
                 int age = newData.values().iterator().next().getAge();
-                while (resultSet.next()) {
-                    if (resultSet.getInt(2) < age) {
-                        resultSet.deleteRow();
-                        updateRow++;
-                    }
-                }
+
+                updateRow = statement.executeUpdate("DELETE FROM people WHERE age < " + age);
+
                 connection.commit();
             } catch (SQLException e) {
-                e.printStackTrace();
-            } catch (IllegalArgumentException e) {
-                msgToClient = "Key is not correct";
+                msgToClient = "Could not connect to DB";
             }
             return updateRow;
         }
@@ -238,14 +220,15 @@ public enum Button {
             try {
                 Statement statement = connection.createStatement();
 
-                ResultSet resultSet = statement.executeQuery("SELECT AGE FROM people;");
+                ResultSet resultSet = statement.executeQuery("SELECT AGE " +
+                        "FROM people " +
+                        "ORDER BY AGE;");
+
                 Iterator<Man> iterator = newData.values().iterator();
                 int age = iterator.next().getAge();
 
-                while (resultSet.next()) {
-                    if (age <= resultSet.getInt(1)) {
-                        isMax = false;
-                    }
+                if (resultSet.getFetchSize() != 0) {
+                    isMax = resultSet.getInt(1) > age;
                 }
 
                 this.updateRow = isMax ?
@@ -253,11 +236,11 @@ public enum Button {
                         0;
 
                 msgToClient = isMax ?
-                        "Object is not min" :
-                        "Object added";
+                        "Object added" :
+                        "Object is not max";
 
             } catch (SQLException e) {
-                e.printStackTrace();
+                msgToClient = "Could not connect to DB";
             }
             return updateRow;
         }
@@ -280,14 +263,15 @@ public enum Button {
             try {
                 Statement statement = connection.createStatement();
 
-                ResultSet resultSet = statement.executeQuery("SELECT AGE FROM people;");
+                ResultSet resultSet = statement.executeQuery("SELECT AGE " +
+                        "FROM people " +
+                        "ORDER BY AGE;");
+
                 Iterator<Man> iterator = newData.values().iterator();
                 int age = iterator.next().getAge();
 
-                while (resultSet.next()) {
-                    if (age >= resultSet.getInt(1)) {
-                        isMin = false;
-                    }
+                if (resultSet.getFetchSize() != 0) {
+                    isMin = resultSet.getInt(1) > age;
                 }
 
                 this.updateRow = isMin ?
@@ -295,11 +279,11 @@ public enum Button {
                         0;
 
                 msgToClient = isMin ?
-                        "Object is not min" :
-                        "Object added";
+                        "Object added" :
+                        "Object is not min";
 
             } catch (SQLException e) {
-                e.printStackTrace();
+                msgToClient = "Could not connect to DB";
             }
             return updateRow;
         }
@@ -323,7 +307,7 @@ public enum Button {
                 removeFromNewDataDuplicate(connection, newData);
                 updateRow = insertPeopleQueryExecute(connection, newData);
             } catch (SQLException e) {
-                e.printStackTrace();
+                msgToClient = "Could not connect to DB";
             } catch (NumberFormatException e) {
                 msgToClient = "Key is not correct";
             }
@@ -356,57 +340,127 @@ public enum Button {
 
         @Override
         public int execute(Connection connection, Map<String, Man> family, Map<String, Man> newData) {
-            msgToClient = "Object added";
             try {
                 Statement statement = connection.createStatement();
-                ResultSet resultSet = statement.executeQuery("SELECT ID FROM people;");
-                while (resultSet.next()) {
-                    if (newData.containsKey(resultSet.getString(1))) {
-                        isInDB = true;
-                        msgToClient = "Object already in DB";
-                    }
-                }
 
-                updateRow = !isInDB ? insertNewRowQuery(connection, newData) : 0;
+                int key = Integer.parseInt(newData.entrySet().iterator().next().getKey());
+
+                isInDB = statement.executeQuery("SELECT ID " +
+                        "FROM people " +
+                        "WHERE ID = " + key).next();
+
+
+                msgToClient = !isInDB ? "Object added" : "Object already in DB";
+
+                updateRow = !isInDB ?
+                        insertNewRowQuery(connection, newData) :
+                        0;
 
             } catch (SQLException e) {
-                System.out.println(e.getMessage());
+                msgToClient = "Could not connect to DB";
             } catch (NumberFormatException e) {
                 msgToClient = "Key is not correct";
             }
             return updateRow;
+        }
+    },
+
+
+    /**
+     * Команда clear.
+     * Очищает коллекцию.
+     *
+     * @param peopleTree Ожидается TreeView<Container> для изменения содержимого
+     * @version 3.0
+     * @since 1.0
+     */
+    CLEAR {
+        @Override
+        public int execute(Connection connection, Map<String, Man> family, Map<String, Man> newData) {
+            try {
+                Statement statement = connection.createStatement();
+                msgToClient = "Database cleared";
+                return statement.executeUpdate("DELETE FROM people;");
+            } catch (SQLException e) {
+                msgToClient = "Could not connect to DB";
+            }
+            return 0;
+        }
+    },
+
+
+    /**
+     * Команда load.
+     * Загружает дефолтные объекты типа {@link Storage} данные в коллекцию.
+     *
+     * @param peopleTree Ожидается TreeView<Container> для изменения содержимого
+     * @version 3.0
+     */
+    LOAD {
+        private int updateRow;
+
+        @Override
+        public int execute(Connection connection, Map<String, Man> family, Map<String, Man> newData) {
+            try {
+                connection.setAutoCommit(false);
+
+                CLEAR.execute(connection, family, newData);
+
+                updateRow = INSERT_NEW_OBJECT.execute(connection, family, newData);
+
+                connection.commit();
+                msgToClient = "Default data was loaded";
+            } catch (SQLException e) {
+                msgToClient = "Could not connect to DB";
+            }
+            return updateRow;
+        }
+    },
+
+
+    READ {
+
+    },
+
+
+    UPDATE {
+        @Override
+        public int execute(Connection connection, Map<String, Man> family, Map<String, Man> newData) {
+            try {
+                PreparedStatement statement = connection.prepareStatement(UPDATE_PEOPLE_NAME_QUERY);
+
+
+                statement.setString(1, newData.values().iterator().next().getName());
+                statement.setInt(2, Integer.parseInt(newData.keySet().iterator().next()));
+
+                statement.executeUpdate();
+
+            } catch (SQLException e) {
+                msgToClient = "Could not connect to DB";
+            } catch (NumberFormatException e) {
+                msgToClient = "Key is not correct";
+            }
+            return 0;
         }
     };
 
 
     private static final String INSERT_PEOPLE_QUERY =
             "INSERT INTO PEOPLE(AGE, NAME) VALUES (?,?);";
-    private static final String REMOVE_PEOPLE_QUERY =
-            "DELETE FROM PEOPLE WHERE id = ?";
     private static final String INSERT_NEW_ROW_QUERY =
             "INSERT INTO PEOPLE VALUES(?,?,?)";
     private static final String UPDATE_PEOPLE_NAME_QUERY =
-            "UPDATE PEOPLE SET name = ?;";
+            "UPDATE PEOPLE SET name = ? WHERE id = ?;";
     private static String msgToClient;
+
+    public static String getMsgToClient() {
+        return msgToClient;
+    }
 
     public int execute(Connection connection, Map<String, Man> family, Map<String, Man> newData) {
         return -1;
     }
 
-
-    public int removePeopleQueryExecute(Connection connection, Map<String, Man> newData) throws SQLException, IllegalArgumentException {
-        int updateRow = 0;
-
-        connection.setAutoCommit(false);
-        PreparedStatement preparedStatement = connection.prepareStatement(REMOVE_PEOPLE_QUERY);
-        for (Map.Entry<String, Man> entry : newData.entrySet()) {
-            preparedStatement.setInt(1, Integer.parseInt(entry.getKey()));
-            updateRow += preparedStatement.executeUpdate();
-        }
-        connection.commit();
-
-        return -1;
-    }
 
     public int insertPeopleQueryExecute(Connection connection, Map<String, Man> newData) throws SQLException {
         int updateRow = 0;
@@ -423,17 +477,25 @@ public enum Button {
         return updateRow;
     }
 
-    public int insertNewRowQuery(Connection connection, Map<String, Man> newData) throws SQLException {
+    public int insertNewRowQuery(Connection connection, Map<String, Man> newData) {
         int updateRow = 0;
-        connection.setAutoCommit(false);
-        PreparedStatement preparedStatement = connection.prepareStatement(INSERT_NEW_ROW_QUERY);
-        for (Map.Entry<String, Man> entry : newData.entrySet()) {
-            preparedStatement.setInt(1, Integer.parseInt(entry.getKey()));
-            preparedStatement.setInt(2, entry.getValue().getAge());
-            preparedStatement.setString(3, entry.getValue().getName());
-            updateRow += preparedStatement.executeUpdate();
+        try {
+            connection.setAutoCommit(false);
+            PreparedStatement preparedStatement = connection.prepareStatement(INSERT_NEW_ROW_QUERY);
+
+            for (Map.Entry<String, Man> entry : newData.entrySet()) {
+                preparedStatement.setInt(1, Integer.parseInt(entry.getKey()));
+                preparedStatement.setInt(2, entry.getValue().getAge());
+                preparedStatement.setString(3, entry.getValue().getName());
+                updateRow += preparedStatement.executeUpdate();
+            }
+
+            connection.commit();
+        } catch (SQLException e) {
+            if (e.getSQLState().equals("23514")) {
+                msgToClient = "Age should be positive";
+            }
         }
-        connection.commit();
         return updateRow;
     }
 }

@@ -30,8 +30,7 @@ public class ServerLoader {
         SocketAddress inetSocketAddress = new InetSocketAddress(InetAddress.getLocalHost(), 7007);
         while (true) {
             try (DatagramChannel serverSocket = DatagramChannel.open().bind(inetSocketAddress)) {
-//                System.out.println(serverSocket);
-
+                System.out.println(serverSocket);
                 ByteBuffer dataFromClient = ByteBuffer.allocate(8 * 1024);
                 while (true) {
                     SocketAddress socketAddress = serverSocket.receive(dataFromClient);
@@ -44,9 +43,6 @@ public class ServerLoader {
                         messageToClient.sendData(serverSocket, socketAddress);
                     }
 
-//                    ByteBuffer dataToClient = ByteBuffer.wrap(("Echo: " + msgFromClient).getBytes());
-//                    serverSocket.send(dataToClient, socketAddress);
-//                    System.out.println(new String(dataToClient.array()));
                     dataFromClient.clear();
                 }
 
@@ -66,7 +62,10 @@ public class ServerLoader {
         if (msgFromClient.equals("END")) {
             typeOfData = Data.OLD;
             WorkWithDB workWithDB = new WorkWithDB(oldData, newData, button);
-            return workWithDB.executeCommand();
+            MessageToClient messageToClient =workWithDB.executeCommand();
+            newData.reset();
+            oldData.reset();
+            return messageToClient;
         }
 
         try {
