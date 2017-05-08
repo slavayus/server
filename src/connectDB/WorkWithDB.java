@@ -27,7 +27,6 @@ public class WorkWithDB {
     private Button button;
 
 
-
     WorkWithDB() {
     }
 
@@ -48,7 +47,7 @@ public class WorkWithDB {
 
             deserializeInputData();
 
-            MessageToClient messageToClient =new MessageToClient(checkOldData(statement), modifyDataInDB(connection), getNewDataForClient(statement), Button.getMsgToClient());
+            MessageToClient messageToClient = new MessageToClient(checkOldData(statement), modifyDataInDB(connection), getNewDataForClient(statement), Button.getMsgToClient());
             connection.close();
             return messageToClient;
         } catch (SQLException e) {
@@ -71,7 +70,7 @@ public class WorkWithDB {
     }
 
     private int modifyDataInDB(Connection connection) {
-        return  button.execute(connection,family,newData);
+        return button.execute(connection, family, newData);
     }
 
 
@@ -88,9 +87,10 @@ public class WorkWithDB {
                 return false;
             }
 
-//сравнивать все данные, потому что второй клиент может изменить данные.
             while (resultSet.next()) {
-                if (!family.containsKey(resultSet.getString(1))) {
+                if (!(family.containsKey(resultSet.getString(1))&&
+                        family.get(resultSet.getString(1)).getName().equals(resultSet.getString(3))&&
+                        family.get(resultSet.getString(1)).getAge()==resultSet.getInt(2))) {
                     return false;
                 }
             }
@@ -109,7 +109,7 @@ public class WorkWithDB {
         try {
             statement.executeUpdate(createTable);
         } catch (SQLException e) {
-            System.out.println(e.getMessage());
+//            System.out.println(e.getMessage());
         }
     }
 

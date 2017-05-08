@@ -14,13 +14,13 @@ import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by slavik on 01.05.17.
  */
 public class ServerLoader {
-    private Map<String, People> family = new ConcurrentHashMap<>();
     private static ByteArrayOutputStream oldData = new ByteArrayOutputStream();
     private static ByteArrayOutputStream newData = new ByteArrayOutputStream();
     private static Button button;

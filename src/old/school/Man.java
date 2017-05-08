@@ -10,13 +10,16 @@ public abstract class Man implements Serializable{
     protected String name;
     protected int age;
 
-    protected Man(String name) {
+    public Man(String name) {
         setName(name);
     }
 
-    protected Man(int age, String name) {
+    public Man(int age, String name) {
         setAge(age);
         setName(name);
+    }
+
+    protected Man() {
     }
 
     public boolean setName(String name) {
