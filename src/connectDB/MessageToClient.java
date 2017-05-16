@@ -30,8 +30,9 @@ public class MessageToClient {
     }
 
     //newData, NEW, modifiedRow, STATE, clientConnectionState, MSG, msgToClient, END
-    public void sendData(DatagramChannel serverSocket, SocketAddress socketAddress) {
+    public synchronized void sendData(DatagramChannel serverSocket, SocketAddress socketAddress) {
         try  {
+            System.out.println("YEE");
             sendMap(serverSocket, socketAddress);
             sendServiceInformation(serverSocket, socketAddress, "NEW");
             sendModifiedRow(serverSocket, socketAddress);
@@ -40,6 +41,7 @@ public class MessageToClient {
             sendServiceInformation(serverSocket, socketAddress, "MSG");
             sendMsgToClient(serverSocket,socketAddress);
             sendServiceInformation(serverSocket, socketAddress, "END");
+            System.out.println("send");
 
         } catch (IOException e) {
             e.printStackTrace();
