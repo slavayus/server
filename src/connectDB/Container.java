@@ -1,6 +1,7 @@
 package connectDB;
 
 import DataFromClitent.Data;
+import DataFromClitent.ServerLoader;
 import GUI.Button;
 import old.school.Man;
 import old.school.People;
@@ -44,12 +45,14 @@ public class Container implements Runnable {
     public void run() {
         while (true) {
             synchronized (this) {
-//                System.out.println("8");
-                if (numOfReceive == 3) {
+                if (numOfReceive == 6) {
                     System.out.println("1");
                     MessageToClient messageToClient = executeCommand();
                     if (messageToClient != null) {
-                        messageToClient.sendData(serverSocket, socketAddress);
+                        messageToClient.sendData(socketAddress);
+                        ServerLoader.containerElement.keySet().stream().
+                                filter(s -> !s.equals(socketAddress.toString())).
+                                forEach(s->messageToClient.sendNewDataAllClients(ServerLoader.containerElement.get(s).socketAddress));
                     }
                 }
             }
@@ -67,7 +70,7 @@ public class Container implements Runnable {
 
             deserializeInputData();
 
-            MessageToClient messageToClient = new MessageToClient(checkOldData(statement), modifyDataInDB(connection), getNewDataForClient(statement), Button.getMsgToClient());
+            MessageToClient messageToClient = new MessageToClient(checkOldData(statement), modifyDataInDB(connection), getNewDataForClient(statement), Button.getMsgToClient(), serverSocket);
             connection.close();
             return messageToClient;
         } catch (SQLException e) {
@@ -87,8 +90,8 @@ public class Container implements Runnable {
         }
 
         try (ObjectInputStream objectInputStream = new ObjectInputStream(new ByteArrayInputStream(((ByteArrayOutputStream) oldByteData).toByteArray()))) {
-            ((ByteArrayOutputStream) oldByteData).reset();
             family = (Map<String, Man>) objectInputStream.readObject();
+            ((ByteArrayOutputStream) oldByteData).reset();
         } catch (IOException | ClassNotFoundException e) {
             System.out.println(e.getMessage());
         }
@@ -165,7 +168,6 @@ public class Container implements Runnable {
     }
 
     public synchronized void setNewByteData(byte[] newByteData) throws IOException {
-
         this.newByteData.write(newByteData);
         ++numOfReceive;
     }
@@ -178,6 +180,7 @@ public class Container implements Runnable {
     }
 
     public synchronized void setTypeOfData(Data typeOfData) {
+        numOfReceive++;
         this.typeOfData = typeOfData;
     }
 

@@ -3,7 +3,6 @@ package DataFromClitent;
 import GUI.Button;
 import connectDB.Container;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -18,15 +17,17 @@ import java.util.Map;
  * Created by slavik on 01.05.17.
  */
 public class ServerLoader {
-    private static Map<String, Container> containerElement = new HashMap<>();
+    public static Map<String, Container> containerElement = new HashMap<>();
     private static Container container;
+    public static DatagramChannel serverSocket;
 
     public static void main(String[] args) throws UnknownHostException {
         SocketAddress inetSocketAddress = new InetSocketAddress(InetAddress.getByName("0.0.0.0"), 7007);
         while (true) {
-            try (DatagramChannel serverSocket = DatagramChannel.open().bind(inetSocketAddress)) {
+            try {
+                serverSocket = DatagramChannel.open().bind(inetSocketAddress);
                 System.out.println(serverSocket);
-                ByteBuffer dataFromClient = ByteBuffer.allocate(1024);
+                ByteBuffer dataFromClient = ByteBuffer.allocate(8 * 1024);
                 while (true) {
                     SocketAddress socketAddress = serverSocket.receive(dataFromClient);
 
@@ -37,7 +38,7 @@ public class ServerLoader {
                     });
 
                     synchronized (container) {
-                        System.out.println(socketAddress.toString());
+//                        System.out.println(socketAddress.toString());
                         String msgFromClient = new String(dataFromClient.array(), 0, dataFromClient.position());
 
 
@@ -56,19 +57,11 @@ public class ServerLoader {
     oldData, NEW, newData, BUTTON, BUTTON, END
      */
 
-    private static synchronized void analysisMsgFromClient(String msgFromClient, ByteBuffer dataFromClient, DatagramChannel serverSocket, SocketAddress socketAddress) throws IOException {
+    private static void analysisMsgFromClient(String msgFromClient, ByteBuffer dataFromClient, DatagramChannel serverSocket, SocketAddress socketAddress) throws IOException {
         if (msgFromClient.equals("END")) {
             container.setTypeOfData(Data.OLD);
             return;
         }
-
-        if (msgFromClient.equals("SYNCHRONIZE")) {
-
-//            WorkWithDB workWithDB = new WorkWithDB();
-//            workWithDB.sendDB(serverSocket, socketAddress);
-            return;
-        }
-
 
         try {
             container.setTypeOfData(Data.valueOf(msgFromClient));
