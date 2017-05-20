@@ -27,7 +27,7 @@ public class ServerLoader {
             try {
                 serverSocket = DatagramChannel.open().bind(inetSocketAddress);
                 System.out.println(serverSocket);
-                ByteBuffer dataFromClient = ByteBuffer.allocate(8 * 1024);
+                ByteBuffer dataFromClient = ByteBuffer.allocate(8 * 1024 * 1024);
                 while (true) {
                     SocketAddress socketAddress = serverSocket.receive(dataFromClient);
 

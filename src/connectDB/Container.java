@@ -30,7 +30,7 @@ public class Container implements Runnable {
     private Map<String, Man> newData;
     private Button button;
     private Data typeOfData = Data.OLD;
-    private byte numOfReceive;
+    private volatile byte numOfReceive;
     private static final String FILE_NAME_DB_PROPERTIES = "DataBase.properties";
     private DatagramChannel serverSocket;
     private SocketAddress socketAddress;
@@ -46,17 +46,24 @@ public class Container implements Runnable {
         while (true) {
             synchronized (this) {
                 if (numOfReceive == 6) {
-                    System.out.println("1");
                     MessageToClient messageToClient = executeCommand();
                     if (messageToClient != null) {
-                        messageToClient.sendData(socketAddress);
-                        ServerLoader.containerElement.keySet().stream().
-                                filter(s -> !s.equals(socketAddress.toString())).
-                                forEach(s->messageToClient.sendNewDataAllClients(ServerLoader.containerElement.get(s).socketAddress));
+                        try {
+                            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                            ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
+                            objectOutputStream.writeObject(messageToClient);
+                            objectOutputStream.flush();
+                            serverSocket.send(ByteBuffer.wrap(byteArrayOutputStream.toByteArray()), socketAddress);
+                            System.out.println
+                                    (socketAddress);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
             }
         }
+
     }
 
 
@@ -70,7 +77,7 @@ public class Container implements Runnable {
 
             deserializeInputData();
 
-            MessageToClient messageToClient = new MessageToClient(checkOldData(statement), modifyDataInDB(connection), getNewDataForClient(statement), Button.getMsgToClient(), serverSocket);
+            MessageToClient messageToClient = new MessageToClient(checkOldData(statement), modifyDataInDB(connection), getNewDataForClient(statement), Button.getMsgToClient());
             connection.close();
             return messageToClient;
         } catch (SQLException e) {
@@ -229,35 +236,5 @@ public class Container implements Runnable {
         }
 
         return dataBaseProperties;
-    }
-
-
-    public void sendDB(DatagramChannel serverSocket, SocketAddress socketAddress) {
-        try {
-
-
-            Statement statement = getConnection().createStatement();
-
-
-            Map<String, Man> newData = getNewDataForClient(statement);
-
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
-            objectOutputStream.writeObject(newData);
-            objectOutputStream.flush();
-            ByteBuffer outputData = ByteBuffer.wrap(byteArrayOutputStream.toByteArray());
-            serverSocket.send(outputData, socketAddress);
-            outputData = ByteBuffer.wrap("END".getBytes());
-            serverSocket.send(outputData, socketAddress);
-            statement.close();
-//            connection.close();
-        } catch (SQLException | IOException e) {
-            System.out.println(e.getMessage());
-        }
-    }
-
-
-    public OutputStream getNewByteData() {
-        return newByteData;
     }
 }
