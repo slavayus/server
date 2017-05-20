@@ -34,7 +34,7 @@ public enum Button {
 
         @Override
         public int execute(Connection connection, Map<String, Man> family, Map<String, Man> newData) {
-            msgToClient = "Objects removed";
+            msgToClient = "message.server.objects.removed";
             try {
                 connection.setAutoCommit(false);
                 Statement statement = connection.createStatement();
@@ -44,9 +44,9 @@ public enum Button {
                 updateRow = statement.executeUpdate("DELETE FROM people WHERE id> " + key);
                 connection.commit();
             } catch (SQLException e) {
-                msgToClient = "Could not connect to DB";
+                msgToClient = "message.server.could.not.connect.to.DB";
             } catch (IllegalArgumentException e) {
-                msgToClient = "Key is not correct";
+                msgToClient = "message.server.key.is.not.correct";
             }
             return updateRow;
         }
@@ -65,7 +65,7 @@ public enum Button {
 
         @Override
         public int execute(Connection connection, Map<String, Man> family, Map<String, Man> newData) {
-            msgToClient = "Objects removed";
+            msgToClient = "message.server.objects.removed";
             try {
                 connection.setAutoCommit(false);
                 Statement statement = connection.createStatement();
@@ -75,9 +75,9 @@ public enum Button {
                 updateRow = statement.executeUpdate("DELETE FROM people WHERE id < " + key);
                 connection.commit();
             } catch (SQLException e) {
-                msgToClient = "Could not connect to DB";
+                msgToClient = "message.server.could.not.connect.to.DB";
             } catch (IllegalArgumentException e) {
-                msgToClient = "Key is not correct";
+                msgToClient = "message.server.key.is.not.correct";
             }
             return updateRow;
         }
@@ -96,7 +96,7 @@ public enum Button {
 
         @Override
         public int execute(Connection connection, Map<String, Man> family, Map<String, Man> newData) {
-            msgToClient = "Objects removed";
+            msgToClient = "message.server.objects.removed";
             try {
                 connection.setAutoCommit(false);
                 Statement statement = connection.createStatement();
@@ -106,9 +106,9 @@ public enum Button {
                 updateRow = statement.executeUpdate("DELETE FROM people WHERE id = " + key);
                 connection.commit();
             } catch (SQLException e) {
-                msgToClient = "Could not connect to DB";
+                msgToClient = "message.server.could.not.connect.to.DB";
             } catch (IllegalArgumentException e) {
-                msgToClient = "Key is not correct";
+                msgToClient = "message.server.key.is.not.correct";
             }
             return updateRow;
         }
@@ -128,7 +128,7 @@ public enum Button {
 
         @Override
         public int execute(Connection connection, Map<String, Man> family, Map<String, Man> newData) {
-            msgToClient = "Objects removed";
+            msgToClient = "message.server.objects.removed";
             try {
                 connection.setAutoCommit(false);
                 Statement statement = connection.createStatement();
@@ -139,7 +139,7 @@ public enum Button {
 
                 connection.commit();
             } catch (SQLException e) {
-                msgToClient = "Could not connect to DB";
+                msgToClient = "message.server.could.not.connect.to.DB";
             }
             return updateRow;
         }
@@ -159,7 +159,7 @@ public enum Button {
 
         @Override
         public int execute(Connection connection, Map<String, Man> family, Map<String, Man> newData) {
-            msgToClient = "Objects removed";
+            msgToClient = "message.server.objects.removed";
             try {
                 connection.setAutoCommit(false);
                 Statement statement = connection.createStatement();
@@ -170,7 +170,7 @@ public enum Button {
 
                 connection.commit();
             } catch (SQLException e) {
-                msgToClient = "Could not connect to DB";
+                msgToClient = "message.server.could.not.connect.to.DB";
             }
             return updateRow;
         }
@@ -190,7 +190,7 @@ public enum Button {
 
         @Override
         public int execute(Connection connection, Map<String, Man> family, Map<String, Man> newData) {
-            msgToClient = "Objects removed";
+            msgToClient = "message.server.objects.removed";
             try {
                 connection.setAutoCommit(false);
                 Statement statement = connection.createStatement();
@@ -201,7 +201,7 @@ public enum Button {
 
                 connection.commit();
             } catch (SQLException e) {
-                msgToClient = "Could not connect to DB";
+                msgToClient = "message.server.could.not.connect.to.DB";
             }
             return updateRow;
         }
@@ -240,11 +240,11 @@ public enum Button {
                         0;
 
                 msgToClient = isMax ?
-                        "Object added" :
-                        "Object is not max";
+                        "message.server.object.added" :
+                        "message.sever.object.is.not.max";
 
             } catch (SQLException e) {
-                msgToClient = "Could not connect to DB";
+                msgToClient = "message.server.could.not.connect.to.DB";
             }
             return updateRow;
         }
@@ -283,11 +283,11 @@ public enum Button {
                         0;
 
                 msgToClient = isMin ?
-                        "Object added" :
-                        "Object is not min";
+                        "message.server.object.added" :
+                        "message.sever.object.is.not.min";
 
             } catch (SQLException e) {
-                msgToClient = "Could not connect to DB";
+                msgToClient = "message.server.could.not.connect.to.DB";
             }
             return updateRow;
         }
@@ -306,14 +306,14 @@ public enum Button {
 
         @Override
         public int execute(Connection connection, Map<String, Man> family, Map<String, Man> newData) {
-            msgToClient = "Object added";
+            msgToClient = "message.server.object.added";
             try {
                 removeFromNewDataDuplicate(connection, newData);
                 updateRow = insertPeopleQueryExecute(connection, newData);
             } catch (SQLException e) {
-                msgToClient = "Could not connect to DB";
+                msgToClient = "message.server.could.not.connect.to.DB";
             } catch (NumberFormatException e) {
-                msgToClient = "Key is not correct";
+                msgToClient = "message.server.key.is.not.correct";
             }
             return updateRow;
         }
@@ -354,16 +354,16 @@ public enum Button {
                         "WHERE ID = " + key).next();
 
 
-                msgToClient = !isInDB ? "Object added" : "Object already in DB";
+                msgToClient = !isInDB ? "message.server.object.added" : "message.server.object.already.in.DB";
 
                 updateRow = !isInDB ?
                         insertNewRowQuery(connection, newData) :
                         0;
 
             } catch (SQLException e) {
-                msgToClient = "Could not connect to DB";
+                msgToClient = "message.server.could.not.connect.to.DB";
             } catch (NumberFormatException e) {
-                msgToClient = "Key is not correct";
+                msgToClient = "message.server.key.is.not.correct";
             }
             return updateRow;
         }
@@ -383,10 +383,10 @@ public enum Button {
         public int execute(Connection connection, Map<String, Man> family, Map<String, Man> newData) {
             try {
                 Statement statement = connection.createStatement();
-                msgToClient = "Database cleared";
+                msgToClient = "message.server.database.cleared";
                 return statement.executeUpdate("DELETE FROM people;");
             } catch (SQLException e) {
-                msgToClient = "Could not connect to DB";
+                msgToClient = "message.server.could.not.connect.to.DB";
             }
             return 0;
         }
@@ -413,9 +413,9 @@ public enum Button {
                 updateRow = INSERT_NEW_OBJECT.execute(connection, family, newData);
 
                 connection.commit();
-                msgToClient = "Default data was loaded";
+                msgToClient = "message.server.default.data.was.loaded";
             } catch (SQLException e) {
-                msgToClient = "Could not connect to DB";
+                msgToClient = "message.server.could.not.connect.to.DB";
             }
             return updateRow;
         }
@@ -440,9 +440,9 @@ public enum Button {
                 statement.executeUpdate();
 
             } catch (SQLException e) {
-                msgToClient = "Could not connect to DB";
+                msgToClient = "message.server.could.not.connect.to.DB";
             } catch (NumberFormatException e) {
-                msgToClient = "Key is not correct";
+                msgToClient = "message.server.key.is.not.correct";
             }
             return 0;
         }
@@ -460,7 +460,7 @@ public enum Button {
 
         @Override
         public int execute(Connection connection, Map<String, Man> family, Map<String, Man> newData) {
-            msgToClient = "This user already exist";
+            msgToClient = "message.server.this.user.already.exist";
             try {
 
                 try (Statement createTableStatement = connection.createStatement()) {
@@ -490,10 +490,10 @@ public enum Button {
                 preparedStatement.setBoolean(3, user.getValue().getAge() == 2);
                 preparedStatement.executeUpdate();
 
-                msgToClient = "User added";
+                msgToClient = "message.server.user.added";
                 return 1;
             } catch (SQLException e) {
-                msgToClient = "Could not connect to DB";
+                msgToClient = "message.server.could.not.connect.to.DB";
             }
             return 0;
         }
@@ -509,7 +509,7 @@ public enum Button {
     REGISTER_FULL {
         @Override
         public int execute(Connection connection, Map<String, Man> family, Map<String, Man> newData) {
-            msgToClient = "This user already exist";
+            msgToClient = "message.server.this.user.already.exist";
             try {
                 Map.Entry<String, Man> user = newData.entrySet().iterator().next();
 
@@ -536,10 +536,10 @@ public enum Button {
 
                 sendMessage(user.getKey(), user.getValue().getName(), password);
 
-                msgToClient = "Password sent to e-mail " + user.getKey();
+                msgToClient = "message.server.password.sent.to.mail " + user.getKey();
                 return 1;
             } catch (SQLException e) {
-                msgToClient = "Could not connect to DB";
+                msgToClient = "message.server.could.not.connect.to.DB";
             }
             return 0;
         }
@@ -574,7 +574,7 @@ public enum Button {
                 Transport.send(msg);
                 System.out.println("Message sent.");
             } catch (MessagingException e) {
-                msgToClient = "E-mail isn't correct";
+                msgToClient = "message.server.mail.is.not.correct";
             }
         }
 
@@ -617,7 +617,7 @@ public enum Button {
     LOGIN {
         @Override
         public int execute(Connection connection, Map<String, Man> family, Map<String, Man> newData) {
-            msgToClient = "User not found";
+            msgToClient = "message.server.user.not.found";
             try {
                 Statement searchStatement = connection.createStatement();
 
@@ -638,7 +638,7 @@ public enum Button {
                 searchStatement.close();
                 return 0;
             } catch (SQLException e) {
-                msgToClient = "Could not connect to DB";
+                msgToClient = "message.server.could.not.connect.to.DB";
             }
             return 0;
         }
@@ -693,7 +693,7 @@ public enum Button {
             connection.commit();
         } catch (SQLException e) {
             if (e.getSQLState().equals("23514")) {
-                msgToClient = "Age should be positive";
+                msgToClient = "message.server.age.should.be.positive";
             }
         }
         return updateRow;
