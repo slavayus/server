@@ -13,6 +13,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.sql.*;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.*;
 
 import static java.sql.ResultSet.CONCUR_UPDATABLE;
@@ -648,7 +651,7 @@ public enum Button {
     private static final String INSERT_PEOPLE_QUERY =
             "INSERT INTO PEOPLE(AGE, NAME) VALUES (?,?);";
     private static final String INSERT_NEW_ROW_QUERY =
-            "INSERT INTO PEOPLE VALUES(?,?,?)";
+            "INSERT INTO PEOPLE VALUES(?,?,?,?)";
     private static final String UPDATE_PEOPLE_NAME_QUERY =
             "UPDATE PEOPLE SET name = ? WHERE id = ?;";
     private static String msgToClient;
@@ -687,6 +690,7 @@ public enum Button {
                 preparedStatement.setInt(1, Integer.parseInt(entry.getKey()));
                 preparedStatement.setInt(2, entry.getValue().getAge());
                 preparedStatement.setString(3, entry.getValue().getName());
+                preparedStatement.setTimestamp(4, new Timestamp(entry.getValue().getTime().toInstant().getEpochSecond()*1000L));
                 updateRow += preparedStatement.executeUpdate();
             }
 

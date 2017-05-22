@@ -1,6 +1,9 @@
 package old.school;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
 /**
  * Created by slavik on 30.10.16.
@@ -9,6 +12,7 @@ public abstract class Man implements Serializable{
     private static final long serialVersionUID =2;
     protected String name;
     protected int age;
+    private  ZonedDateTime time;
 
     public Man(String name) {
         setName(name);
@@ -21,6 +25,11 @@ public abstract class Man implements Serializable{
 
     protected Man() {
     }
+
+    public void setTime(ZonedDateTime zonedDateTime){
+        this.time = zonedDateTime;
+    }
+
 
     public boolean setName(String name) {
         String wrongChars = "qwertyuiopasdfghjklzxcvbnmйцукенгшщзхъфывапролдячсмитьбюё";
@@ -49,5 +58,9 @@ public abstract class Man implements Serializable{
 
     public int getAge() {
         return age;
+    }
+
+    public ZonedDateTime getTime() {
+        return time;
     }
 }

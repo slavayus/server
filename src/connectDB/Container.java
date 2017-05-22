@@ -16,6 +16,8 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -77,7 +79,11 @@ public class Container implements Runnable {
 
             deserializeInputData();
 
-            MessageToClient messageToClient = new MessageToClient(checkOldData(statement), modifyDataInDB(connection), getNewDataForClient(statement), Button.getMsgToClient());
+            MessageToClient messageToClient = new MessageToClient(
+                    checkOldData(statement),
+                    modifyDataInDB(connection),
+                    getNewDataForClient(statement),
+                    Button.getMsgToClient());
             connection.close();
             return messageToClient;
         } catch (SQLException e) {
@@ -109,7 +115,8 @@ public class Container implements Runnable {
         String createTable = "CREATE TABLE PEOPLE(\n" +
                 "  ID SERIAL PRIMARY KEY,\n" +
                 "  AGE INTEGER CONSTRAINT positive_age CHECK (AGE>=0) NOT NULL,\n" +
-                "  NAME TEXT \n" +
+                "  NAME TEXT, \n" +
+                "  CREATE_DATE TIMESTAMP \n"+
                 ");";
         try {
             statement.executeUpdate(createTable);
@@ -123,7 +130,9 @@ public class Container implements Runnable {
         try {
             ResultSet resultSet = statement.executeQuery("SELECT * FROM people");
             while (resultSet.next()) {
-                dataFromDB.put((String.valueOf(resultSet.getInt(1))), new People(resultSet.getInt(2), resultSet.getString(3)));
+                People people = new People(resultSet.getInt(2), resultSet.getString(3));
+                people.setTime(ZonedDateTime.ofInstant(resultSet.getTimestamp(4).toInstant(), ZoneOffset.UTC));
+                dataFromDB.put((String.valueOf(resultSet.getInt(1))), people);
             }
             resultSet.close();
         } catch (SQLException e) {
@@ -199,7 +208,7 @@ public class Container implements Runnable {
         return socketAddress;
     }
 
-    private Connection getConnection() {
+    public static Connection getConnection() {
         Properties dataBaseProperties = getProperties();
         PGConnectionPoolDataSource pgConnectionPoolDataSource = new PGConnectionPoolDataSource();
         pgConnectionPoolDataSource.setDatabaseName(dataBaseProperties.getProperty("jdbs.dbname"));
@@ -214,7 +223,7 @@ public class Container implements Runnable {
         return null;
     }
 
-    private Properties getProperties() {
+    private static Properties getProperties() {
 
         Properties platformProperties = new Properties();
         try (InputStream scanner = Container.class.getResourceAsStream("/properties/" + FILE_NAME_DB_PROPERTIES)) {
