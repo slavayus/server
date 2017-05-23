@@ -1,18 +1,31 @@
 package old.school;
 
+import old.school.annotation.Column;
+import old.school.annotation.Entity;
+
 import java.io.Serializable;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
 /**
  * Created by slavik on 30.10.16.
  */
-public abstract class Man implements Serializable{
-    private static final long serialVersionUID =2;
-    protected String name;
+@Entity(tableName = "PEOPLE")
+public abstract class Man implements Serializable {
+    private static final long serialVersionUID = 2;
+
+    @Column(name = "ID", type = "SERIAL PRIMARY KEY")
+    private String id;
+
+    @Column(name = "AGE", type = "INTEGER CONSTRAINT positive_age CHECK (AGE>0) NOT NULL")
     protected int age;
-    private  ZonedDateTime time;
+
+    @Column(name = "NAME", type = "TEXT NOT NULL")
+    protected String name;
+
+
+    @Column(name = "CREATE_DATE", type = "TIMESTAMP")
+    private ZonedDateTime time;
+
 
     public Man(String name) {
         setName(name);
@@ -26,7 +39,7 @@ public abstract class Man implements Serializable{
     protected Man() {
     }
 
-    public void setTime(ZonedDateTime zonedDateTime){
+    public void setTime(ZonedDateTime zonedDateTime) {
         this.time = zonedDateTime;
     }
 
@@ -34,8 +47,8 @@ public abstract class Man implements Serializable{
     public boolean setName(String name) {
         String wrongChars = "qwertyuiopasdfghjklzxcvbnmйцукенгшщзхъфывапролдячсмитьбюё";
 
-        for(int i=0; i<name.length(); i++){
-            if(!wrongChars.contains(name.substring(i,i+1).toLowerCase())){
+        for (int i = 0; i < name.length(); i++) {
+            if (!wrongChars.contains(name.substring(i, i + 1).toLowerCase())) {
                 return false;
             }
         }
@@ -49,7 +62,7 @@ public abstract class Man implements Serializable{
     }
 
     public boolean setAge(int age) {
-        if(age<0){
+        if (age < 0) {
             return false;
         }
         this.age = age;

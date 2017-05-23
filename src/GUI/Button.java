@@ -1,25 +1,14 @@
 package GUI;
 
-import com.sun.org.apache.regexp.internal.RE;
-import com.sun.xml.internal.ws.api.ha.StickyFeature;
 import old.school.Man;
-import org.postgresql.util.PSQLException;
-import org.postgresql.util.ServerErrorMessage;
 
 import javax.mail.*;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintWriter;
 import java.sql.*;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.*;
-
-import static java.sql.ResultSet.CONCUR_UPDATABLE;
-import static java.sql.ResultSet.TYPE_FORWARD_ONLY;
 
 /**
  * Created by slavik on 03.05.17.
@@ -266,7 +255,7 @@ public enum Button {
         private boolean isMin = true;
 
         @Override
-        public int execute(Connection connection, Map<String, Man> family, Map<String, Man> newData) {
+        public int execute(Map<String, Man> newData) {
             try {
                 Statement statement = connection.createStatement();
 
@@ -308,28 +297,17 @@ public enum Button {
         int updateRow;
 
         @Override
-        public int execute(Connection connection, Map<String, Man> family, Map<String, Man> newData) {
-            msgToClient = "message.server.object.added";
-            try {
-                removeFromNewDataDuplicate(connection, newData);
-                updateRow = insertPeopleQueryExecute(connection, newData);
-            } catch (SQLException e) {
-                msgToClient = "message.server.could.not.connect.to.DB";
-            } catch (NumberFormatException e) {
-                msgToClient = "message.server.key.is.not.correct";
-            }
+        public int execute(Map<String, Man> family, Map<String, Man> newData) {
+            ManDAO manDAO = new ManDAO();
+            Map<String, Man> manMap = manDAO.selectAll();
+
+            manMap.forEach((key, value) -> newData.entrySet().removeIf(stringManEntry -> stringManEntry.getKey().equals(key)));
+
+            updateRow = manDAO.insert(newData, false);
+
+            msgToClient = manDAO.getMsgResult();
+
             return updateRow;
-        }
-
-        private void removeFromNewDataDuplicate(Connection connection, Map<String, Man> newData) throws SQLException {
-            Statement statement = connection.createStatement();
-            ResultSet resultSet = statement.executeQuery("SELECT ID FROM people");
-            while (resultSet.next()) {
-                if (newData.containsKey(String.valueOf(resultSet.getInt(1)))) {
-                    newData.remove(String.valueOf(resultSet.getInt(1)));
-                }
-            }
-
         }
     },
 
@@ -342,33 +320,12 @@ public enum Button {
      * @version 3.0
      */
     INSERT_NEW_OBJECT {
-        private boolean isInDB;
-        private int updateRow;
-
         @Override
-        public int execute(Connection connection, Map<String, Man> family, Map<String, Man> newData) {
-            try {
-                Statement statement = connection.createStatement();
-
-                int key = Integer.parseInt(newData.entrySet().iterator().next().getKey());
-
-                isInDB = statement.executeQuery("SELECT ID " +
-                        "FROM people " +
-                        "WHERE ID = " + key).next();
-
-
-                msgToClient = !isInDB ? "message.server.object.added" : "message.server.object.already.in.DB";
-
-                updateRow = !isInDB ?
-                        insertNewRowQuery(connection, newData) :
-                        0;
-
-            } catch (SQLException e) {
-                msgToClient = "message.server.could.not.connect.to.DB";
-            } catch (NumberFormatException e) {
-                msgToClient = "message.server.key.is.not.correct";
-            }
-            return updateRow;
+        public int execute(Map<String, Man> newData) {
+            ManDAO manDAO = new ManDAO();
+            return !manDAO.searchWithID(newData) && manDAO.getMsgResult() == null ?
+                    manDAO.insert(newData, true) :
+                    0;
         }
     },
 
@@ -383,22 +340,17 @@ public enum Button {
      */
     CLEAR {
         @Override
-        public int execute(Connection connection, Map<String, Man> family, Map<String, Man> newData) {
-            try {
-                Statement statement = connection.createStatement();
-                msgToClient = "message.server.database.cleared";
-                return statement.executeUpdate("DELETE FROM people;");
-            } catch (SQLException e) {
-                msgToClient = "message.server.could.not.connect.to.DB";
-            }
-            return 0;
+        public int execute(Map<String, Man> newData) {
+            ManDAO manDAO = new ManDAO();
+            int modifiedRow = manDAO.clearDB();
+            msgToClient = manDAO.getMsgResult();
+            return modifiedRow;
         }
     },
 
 
     /**
      * Команда load.
-     * Загружает дефолтные объекты типа {@link Storage} данные в коллекцию.
      *
      * @param peopleTree Ожидается TreeView<Container> для изменения содержимого
      * @version 3.0
@@ -407,48 +359,29 @@ public enum Button {
         private int updateRow;
 
         @Override
-        public int execute(Connection connection, Map<String, Man> family, Map<String, Man> newData) {
-            try {
-                connection.setAutoCommit(false);
+        public int execute(Map<String, Man> family, Map<String, Man> newData) {
+            CLEAR.execute(newData);
 
-                CLEAR.execute(connection, family, newData);
+            updateRow = INSERT_NEW_OBJECT.execute(newData);
 
-                updateRow = INSERT_NEW_OBJECT.execute(connection, family, newData);
-
-                connection.commit();
-                msgToClient = "message.server.default.data.was.loaded";
-            } catch (SQLException e) {
-                msgToClient = "message.server.could.not.connect.to.DB";
-            }
             return updateRow;
         }
     },
 
 
     READ {
-
     },
 
 
     UPDATE {
         @Override
-        public int execute(Connection connection, Map<String, Man> family, Map<String, Man> newData) {
-            try {
-                PreparedStatement statement = connection.prepareStatement(UPDATE_PEOPLE_NAME_QUERY);
-
-
-                statement.setString(1, newData.values().iterator().next().getName());
-                statement.setInt(2, Integer.parseInt(newData.keySet().iterator().next()));
-
-                statement.executeUpdate();
-
-            } catch (SQLException e) {
-                msgToClient = "message.server.could.not.connect.to.DB";
-            } catch (NumberFormatException e) {
-                msgToClient = "message.server.key.is.not.correct";
-            }
+        public int execute(Map<String, Man> family, Map<String, Man> newData) {
+            ManDAO manDAO = new ManDAO();
+            manDAO.update(newData);
+            msgToClient = manDAO.getMsgResult();
             return 0;
         }
+
     },
 
 
@@ -586,10 +519,10 @@ public enum Button {
             StringBuilder randString;
             PreparedStatement preparedStatement;
 
-            int count ;
-            do{
-                count =(int) (Math.random() * 30);
-            }while (count<7);
+            int count;
+            do {
+                count = (int) (Math.random() * 30);
+            } while (count < 7);
 
             do {
                 String symbols = "qwertyuiopasdfghjklzxcvbnm1234567890";
@@ -647,59 +580,17 @@ public enum Button {
         }
     };
 
-
-    private static final String INSERT_PEOPLE_QUERY =
-            "INSERT INTO PEOPLE(AGE, NAME) VALUES (?,?);";
-    private static final String INSERT_NEW_ROW_QUERY =
-            "INSERT INTO PEOPLE VALUES(?,?,?,?)";
-    private static final String UPDATE_PEOPLE_NAME_QUERY =
-            "UPDATE PEOPLE SET name = ? WHERE id = ?;";
     private static String msgToClient;
 
     public static String getMsgToClient() {
         return msgToClient;
     }
 
-    public int execute(Connection connection, Map<String, Man> family, Map<String, Man> newData) {
-        return -1;
+    public int execute(Map<String, Man> family, Map<String, Man> newData) {
+        return 0;
     }
 
-
-    public int insertPeopleQueryExecute(Connection connection, Map<String, Man> newData) throws SQLException {
-        int updateRow = 0;
-
-        connection.setAutoCommit(false);
-        PreparedStatement preparedStatement = connection.prepareStatement(INSERT_PEOPLE_QUERY);
-        for (Map.Entry<String, Man> entry : newData.entrySet()) {
-            preparedStatement.setInt(1, entry.getValue().getAge());
-            preparedStatement.setString(2, entry.getValue().getName());
-            updateRow += preparedStatement.executeUpdate();
-        }
-        connection.commit();
-
-        return updateRow;
-    }
-
-    public int insertNewRowQuery(Connection connection, Map<String, Man> newData) {
-        int updateRow = 0;
-        try {
-            connection.setAutoCommit(false);
-            PreparedStatement preparedStatement = connection.prepareStatement(INSERT_NEW_ROW_QUERY);
-
-            for (Map.Entry<String, Man> entry : newData.entrySet()) {
-                preparedStatement.setInt(1, Integer.parseInt(entry.getKey()));
-                preparedStatement.setInt(2, entry.getValue().getAge());
-                preparedStatement.setString(3, entry.getValue().getName());
-                preparedStatement.setTimestamp(4, new Timestamp(entry.getValue().getTime().toInstant().getEpochSecond()*1000L));
-                updateRow += preparedStatement.executeUpdate();
-            }
-
-            connection.commit();
-        } catch (SQLException e) {
-            if (e.getSQLState().equals("23514")) {
-                msgToClient = "message.server.age.should.be.positive";
-            }
-        }
-        return updateRow;
+    public int execute(Map<String, Man> newData) {
+        return 0;
     }
 }

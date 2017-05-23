@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import static connectDB.ConnectDB.getConnection;
 import static org.junit.Assert.*;
 
 /**
@@ -28,7 +29,7 @@ public class ButtonTest {
         Map<String, Man> newData = new HashMap<>();
         People people = new People(23, "knd");
         newData.put("32253", people);
-        Button.INSERT_NEW_OBJECT.insertNewRowQuery(Container.getConnection(), newData);
+        Button.INSERT_NEW_OBJECT.insertNewRowQuery(getConnection(), newData);
 
         DateFormat f = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL, new Locale("mk", "MK"));
 

@@ -3,8 +3,11 @@ package connectDB;
 import DataFromClitent.Data;
 import DataFromClitent.ServerLoader;
 import GUI.Button;
+import GUI.ManDAO;
+import com.sun.istack.internal.NotNull;
 import old.school.Man;
 import old.school.People;
+import org.jetbrains.annotations.Nullable;
 import org.postgresql.ds.PGConnectionPoolDataSource;
 
 import javax.sql.PooledConnection;
@@ -22,6 +25,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
 
+import static connectDB.ConnectDB.getConnection;
+
 /**
  * Created by slavik on 15.05.17.
  */
@@ -33,7 +38,6 @@ public class Container implements Runnable {
     private Button button;
     private Data typeOfData = Data.OLD;
     private volatile byte numOfReceive;
-    private static final String FILE_NAME_DB_PROPERTIES = "DataBase.properties";
     private DatagramChannel serverSocket;
     private SocketAddress socketAddress;
 
@@ -73,18 +77,20 @@ public class Container implements Runnable {
         try {
             numOfReceive = 0;
             Connection connection = getConnection();
-            Statement statement = connection.createStatement();
-
-            initTable(statement);
+            ManDAO manDAO = new ManDAO();
+            manDAO.initTable(connection, Man.class);
 
             deserializeInputData();
 
             MessageToClient messageToClient = new MessageToClient(
-                    checkOldData(statement),
+                    checkOldData(connection),
                     modifyDataInDB(connection),
-                    getNewDataForClient(statement),
+                    manDAO.selectAll(connection),
                     Button.getMsgToClient());
-            connection.close();
+
+            if (connection != null) {
+                connection.close();
+            }
             return messageToClient;
         } catch (SQLException e) {
             System.out.println(e.getMessage());
@@ -111,44 +117,14 @@ public class Container implements Runnable {
 
     }
 
-    private void initTable(Statement statement) {
-        String createTable = "CREATE TABLE PEOPLE(\n" +
-                "  ID SERIAL PRIMARY KEY,\n" +
-                "  AGE INTEGER CONSTRAINT positive_age CHECK (AGE>=0) NOT NULL,\n" +
-                "  NAME TEXT, \n" +
-                "  CREATE_DATE TIMESTAMP \n"+
-                ");";
-        try {
-            statement.executeUpdate(createTable);
-        } catch (SQLException e) {
-//            System.out.println(e.getMessage());
-        }
-    }
-
-    private Map<String, Man> getNewDataForClient(Statement statement) {
-        Map<String, Man> dataFromDB = new LinkedHashMap<>();
-        try {
-            ResultSet resultSet = statement.executeQuery("SELECT * FROM people");
-            while (resultSet.next()) {
-                People people = new People(resultSet.getInt(2), resultSet.getString(3));
-                people.setTime(ZonedDateTime.ofInstant(resultSet.getTimestamp(4).toInstant(), ZoneOffset.UTC));
-                dataFromDB.put((String.valueOf(resultSet.getInt(1))), people);
-            }
-            resultSet.close();
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-        }
-        return dataFromDB;
-    }
-
     private int modifyDataInDB(Connection connection) {
-        return button.execute(connection, family, newData);
+        return button.execute(family, newData);
     }
 
 
     //true - data in DB and data from client is equals
-    private boolean checkOldData(Statement statement) {
-        try {
+    private boolean checkOldData(Connection connection) {
+        try (Statement statement = connection.createStatement()) {
             ResultSet sizeResultSet = statement.executeQuery("SELECT count(*) FROM people;");
             sizeResultSet.next();
             int size = sizeResultSet.getInt(1);
@@ -174,9 +150,6 @@ public class Container implements Runnable {
         return true;
     }
 
-    public OutputStream getOldByteData() {
-        return oldByteData;
-    }
 
     public synchronized void setOldByteData(byte[] oldByteData) throws IOException {
         this.oldByteData.write(oldByteData);
@@ -202,48 +175,5 @@ public class Container implements Runnable {
 
     public synchronized Data getTypeOfData() {
         return typeOfData;
-    }
-
-    public synchronized SocketAddress getSocketAddress() {
-        return socketAddress;
-    }
-
-    public static Connection getConnection() {
-        Properties dataBaseProperties = getProperties();
-        PGConnectionPoolDataSource pgConnectionPoolDataSource = new PGConnectionPoolDataSource();
-        pgConnectionPoolDataSource.setDatabaseName(dataBaseProperties.getProperty("jdbs.dbname"));
-        pgConnectionPoolDataSource.setServerName(dataBaseProperties.getProperty("jdbs.servername"));
-        PooledConnection pooledConnection = null;
-        try {
-            pooledConnection = pgConnectionPoolDataSource.getPooledConnection(dataBaseProperties.getProperty("jdbs.username"), dataBaseProperties.getProperty("jdbs.password"));
-            return pooledConnection.getConnection();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    private static Properties getProperties() {
-
-        Properties platformProperties = new Properties();
-        try (InputStream scanner = Container.class.getResourceAsStream("/properties/" + FILE_NAME_DB_PROPERTIES)) {
-            platformProperties.load(scanner);
-        } catch (FileNotFoundException e) {
-            System.out.println(e.getMessage());
-        } catch (IOException e) {
-            System.out.println("Could not connect");
-        }
-
-
-        Properties dataBaseProperties = new Properties();
-        try (InputStream scanner = Container.class.getResourceAsStream("/properties/" + platformProperties.getProperty("platform"))) {
-            dataBaseProperties.load(scanner);
-        } catch (FileNotFoundException e) {
-            System.out.println(e.getMessage());
-        } catch (IOException e) {
-            System.out.println("Could not connect");
-        }
-
-        return dataBaseProperties;
     }
 }
