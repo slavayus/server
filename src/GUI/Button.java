@@ -10,6 +10,8 @@ import java.io.InputStream;
 import java.sql.*;
 import java.util.*;
 
+import static connectDB.ConnectDB.getConnection;
+
 /**
  * Created by slavik on 03.05.17.
  */
@@ -25,9 +27,10 @@ public enum Button {
         private int updateRow;
 
         @Override
-        public int execute(Connection connection, Map<String, Man> family, Map<String, Man> newData) {
+        public int execute(Map<String, Man> family, Map<String, Man> newData) {
             msgToClient = "message.server.objects.removed";
             try {
+                Connection connection = getConnection();
                 connection.setAutoCommit(false);
                 Statement statement = connection.createStatement();
 
@@ -56,9 +59,10 @@ public enum Button {
         private int updateRow;
 
         @Override
-        public int execute(Connection connection, Map<String, Man> family, Map<String, Man> newData) {
+        public int execute(Map<String, Man> family, Map<String, Man> newData) {
             msgToClient = "message.server.objects.removed";
             try {
+                Connection connection = getConnection();
                 connection.setAutoCommit(false);
                 Statement statement = connection.createStatement();
 
@@ -87,9 +91,10 @@ public enum Button {
         private int updateRow;
 
         @Override
-        public int execute(Connection connection, Map<String, Man> family, Map<String, Man> newData) {
+        public int execute(Map<String, Man> family, Map<String, Man> newData) {
             msgToClient = "message.server.objects.removed";
             try {
+                Connection connection = getConnection();
                 connection.setAutoCommit(false);
                 Statement statement = connection.createStatement();
 
@@ -119,9 +124,10 @@ public enum Button {
         private int updateRow;
 
         @Override
-        public int execute(Connection connection, Map<String, Man> family, Map<String, Man> newData) {
+        public int execute(Map<String, Man> family, Map<String, Man> newData) {
             msgToClient = "message.server.objects.removed";
             try {
+                Connection connection = getConnection();
                 connection.setAutoCommit(false);
                 Statement statement = connection.createStatement();
 
@@ -150,9 +156,10 @@ public enum Button {
         private int updateRow;
 
         @Override
-        public int execute(Connection connection, Map<String, Man> family, Map<String, Man> newData) {
+        public int execute(Map<String, Man> family, Map<String, Man> newData) {
             msgToClient = "message.server.objects.removed";
             try {
+                Connection connection = getConnection();
                 connection.setAutoCommit(false);
                 Statement statement = connection.createStatement();
 
@@ -181,9 +188,10 @@ public enum Button {
         private int updateRow;
 
         @Override
-        public int execute(Connection connection, Map<String, Man> family, Map<String, Man> newData) {
+        public int execute(Map<String, Man> newData) {
             msgToClient = "message.server.objects.removed";
             try {
+                Connection connection = getConnection();
                 connection.setAutoCommit(false);
                 Statement statement = connection.createStatement();
 
@@ -209,34 +217,36 @@ public enum Button {
      */
     ADD_IF_MAX {
         private int updateRow;
-        private boolean isMax = true;
+        private boolean isMax = false;
 
         @Override
-        public int execute(Connection connection, Map<String, Man> family, Map<String, Man> newData) {
-            try {
-                Statement statement = connection.createStatement();
+        public int execute(Map<String, Man> newData) {
+            ManDAO manDAO = new ManDAO();
+            Map<String, Man> list = manDAO.list();
 
-                ResultSet resultSet = statement.executeQuery("SELECT AGE " +
-                        "FROM people " +
-                        "ORDER BY AGE;");
-
-                Iterator<Man> iterator = newData.values().iterator();
-                int age = iterator.next().getAge();
-
-                if (resultSet.getFetchSize() != 0) {
-                    isMax = resultSet.getInt(1) > age;
+            Man minMan = list.values().iterator().next();
+            for (Man entry : list.values()) {
+                if (minMan.getAge() > entry.getAge()) {
+                    minMan = entry;
                 }
+            }
 
-                this.updateRow = isMax ?
-                        insertPeopleQueryExecute(connection, newData) :
-                        0;
 
-                msgToClient = isMax ?
-                        "message.server.object.added" :
-                        "message.sever.object.is.not.max";
+            int age = newData.values().iterator().next().getAge();
 
-            } catch (SQLException e) {
-                msgToClient = "message.server.could.not.connect.to.DB";
+            if (minMan != null) {
+                isMax = minMan.getAge() > age;
+            }
+
+            this.updateRow = !isMax ?
+                    manDAO.insert(newData.values().iterator().next(), false) :
+                    0;
+
+            msgToClient = manDAO.getMsgResult();
+
+
+            if (isMax) {
+                msgToClient = "message.sever.object.is.not.max";
             }
             return updateRow;
         }
@@ -252,34 +262,36 @@ public enum Button {
      */
     ADD_IF_MIN {
         private int updateRow;
-        private boolean isMin = true;
+        private boolean isMin = false;
 
         @Override
         public int execute(Map<String, Man> newData) {
-            try {
-                Statement statement = connection.createStatement();
+            ManDAO manDAO = new ManDAO();
+            Map<String, Man> list = manDAO.list();
 
-                ResultSet resultSet = statement.executeQuery("SELECT AGE " +
-                        "FROM people " +
-                        "ORDER BY AGE;");
-
-                Iterator<Man> iterator = newData.values().iterator();
-                int age = iterator.next().getAge();
-
-                if (resultSet.getFetchSize() != 0) {
-                    isMin = resultSet.getInt(1) > age;
+            Man minMan = list.values().iterator().next();
+            for (Man entry : list.values()) {
+                if (minMan.getAge() > entry.getAge()) {
+                    minMan = entry;
                 }
+            }
 
-                this.updateRow = isMin ?
-                        insertPeopleQueryExecute(connection, newData) :
-                        0;
 
-                msgToClient = isMin ?
-                        "message.server.object.added" :
-                        "message.sever.object.is.not.min";
+            int age = newData.values().iterator().next().getAge();
 
-            } catch (SQLException e) {
-                msgToClient = "message.server.could.not.connect.to.DB";
+            if (minMan != null) {
+                isMin = minMan.getAge() > age;
+            }
+
+            this.updateRow = !isMin ?
+                    manDAO.insert(newData.values().iterator().next(), false) :
+                    0;
+
+            msgToClient = manDAO.getMsgResult();
+
+
+            if (isMin) {
+                msgToClient = "message.sever.object.is.not.min";
             }
             return updateRow;
         }
@@ -297,15 +309,22 @@ public enum Button {
         int updateRow;
 
         @Override
-        public int execute(Map<String, Man> family, Map<String, Man> newData) {
+        public int execute(Map<String, Man> newData) {
             ManDAO manDAO = new ManDAO();
-            Map<String, Man> manMap = manDAO.selectAll();
+            Map<String, Man> manMap = manDAO.list();
 
             manMap.forEach((key, value) -> newData.entrySet().removeIf(stringManEntry -> stringManEntry.getKey().equals(key)));
 
-            updateRow = manDAO.insert(newData, false);
+            newData.forEach((key, value) -> {
+                value.setId(key);
+                manDAO.insert(value, false);
+            });
 
             msgToClient = manDAO.getMsgResult();
+
+            if (msgToClient.equals("message.server.object.added")) {
+                msgToClient = "message.server.default.data.was.loaded";
+            }
 
             return updateRow;
         }
@@ -320,12 +339,21 @@ public enum Button {
      * @version 3.0
      */
     INSERT_NEW_OBJECT {
+        private int modifyedRow = 0;
+
         @Override
         public int execute(Map<String, Man> newData) {
             ManDAO manDAO = new ManDAO();
-            return !manDAO.searchWithID(newData) && manDAO.getMsgResult() == null ?
-                    manDAO.insert(newData, true) :
-                    0;
+
+            Map<String, Man> manList = manDAO.list();
+
+            manList.forEach((key, value) -> newData.entrySet().removeIf(stringManEntry -> stringManEntry.getKey().equals(key)));
+            Man man = newData.values().iterator().next();
+            man.setId(newData.keySet().iterator().next());
+            manDAO.insert(man, true);
+
+            msgToClient = manDAO.getMsgResult();
+            return modifyedRow;
         }
     },
 
@@ -359,10 +387,10 @@ public enum Button {
         private int updateRow;
 
         @Override
-        public int execute(Map<String, Man> family, Map<String, Man> newData) {
+        public int execute(Map<String, Man> newData) {
             CLEAR.execute(newData);
 
-            updateRow = INSERT_NEW_OBJECT.execute(newData);
+            updateRow = IMPORT_ALL_FROM_FILE.execute(newData);
 
             return updateRow;
         }
@@ -375,9 +403,9 @@ public enum Button {
 
     UPDATE {
         @Override
-        public int execute(Map<String, Man> family, Map<String, Man> newData) {
+        public int execute(Map<String, Man> newData) {
             ManDAO manDAO = new ManDAO();
-            manDAO.update(newData);
+            manDAO.update(newData.values().iterator().next());
             msgToClient = manDAO.getMsgResult();
             return 0;
         }
@@ -395,7 +423,8 @@ public enum Button {
                 ");";
 
         @Override
-        public int execute(Connection connection, Map<String, Man> family, Map<String, Man> newData) {
+        public int execute(Map<String, Man> family, Map<String, Man> newData) {
+            Connection connection = getConnection();
             msgToClient = "message.server.this.user.already.exist";
             try {
 
@@ -440,11 +469,12 @@ public enum Button {
      * age 2 - full version
      * <p>
      * key - mail
-     * name - username
+     * atributeName - username
      */
     REGISTER_FULL {
         @Override
-        public int execute(Connection connection, Map<String, Man> family, Map<String, Man> newData) {
+        public int execute(Map<String, Man> family, Map<String, Man> newData) {
+            Connection connection = getConnection();
             msgToClient = "message.server.this.user.already.exist";
             try {
                 Map.Entry<String, Man> user = newData.entrySet().iterator().next();
@@ -552,7 +582,8 @@ public enum Button {
      */
     LOGIN {
         @Override
-        public int execute(Connection connection, Map<String, Man> family, Map<String, Man> newData) {
+        public int execute(Map<String, Man> family, Map<String, Man> newData) {
+            Connection connection = getConnection();
             msgToClient = "message.server.user.not.found";
             try {
                 Statement searchStatement = connection.createStatement();

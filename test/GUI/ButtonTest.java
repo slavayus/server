@@ -14,6 +14,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
@@ -25,11 +26,28 @@ import static org.junit.Assert.*;
  */
 public class ButtonTest {
     @Test
+    public void execute() throws Exception {
+        People people = new People(255, "kdj");
+        ZonedDateTime zonedDateTime = ZonedDateTime.of(LocalDateTime.now(), ZoneId.of("Europe/Skopje"));
+        Timestamp timestamp = new Timestamp(zonedDateTime.toInstant().getEpochSecond() * 1000L);
+
+        people.setTime(zonedDateTime);
+
+
+        people.setId("3");
+        Map<String,Man> manMap = new LinkedHashMap<>();
+        manMap.put("12",people);
+        Button.LOAD.execute(manMap);
+
+    }
+
+
+    @Test
     public void insertNewRowQuery() throws Exception {
         Map<String, Man> newData = new HashMap<>();
         People people = new People(23, "knd");
         newData.put("32253", people);
-        Button.INSERT_NEW_OBJECT.insertNewRowQuery(getConnection(), newData);
+//        Button.INSERT_NEW_OBJECT.insertNewRowQuery(getConnection(), newData);
 
         DateFormat f = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL, new Locale("mk", "MK"));
 

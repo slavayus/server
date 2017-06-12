@@ -1,16 +1,10 @@
 package connectDB;
 
 import DataFromClitent.Data;
-import DataFromClitent.ServerLoader;
 import GUI.Button;
 import GUI.ManDAO;
-import com.sun.istack.internal.NotNull;
 import old.school.Man;
-import old.school.People;
-import org.jetbrains.annotations.Nullable;
-import org.postgresql.ds.PGConnectionPoolDataSource;
 
-import javax.sql.PooledConnection;
 import java.io.*;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -19,11 +13,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
-import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Properties;
 
 import static connectDB.ConnectDB.getConnection;
 
@@ -85,7 +75,7 @@ public class Container implements Runnable {
             MessageToClient messageToClient = new MessageToClient(
                     checkOldData(connection),
                     modifyDataInDB(connection),
-                    manDAO.selectAll(connection),
+                    manDAO.list(),
                     Button.getMsgToClient());
 
             if (connection != null) {
@@ -118,7 +108,7 @@ public class Container implements Runnable {
     }
 
     private int modifyDataInDB(Connection connection) {
-        return button.execute(family, newData);
+        return button.execute(newData);
     }
 
 

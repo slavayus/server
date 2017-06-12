@@ -13,13 +13,13 @@ import java.util.*;
  * Created by slavik on 23.05.17.
  */
 public interface CRUD {
-    Map<String, Man> select(Man man);
+    Map<String, old.school.Man> select(old.school.Man man);
 
-    int insert(Map<String, Man> family, boolean withKey);
+    int insert(Man man, boolean withKey);
 
     int remove(Man man);
 
-    void update(Map<String, Man> newData);
+    void update(Man newData);
 
     default void initTable(Connection connection, Class cl) {
         Entity entity = (Entity) cl.getAnnotation(Entity.class);
@@ -37,7 +37,7 @@ public interface CRUD {
                 filter(Objects::nonNull).
                 forEach(column -> {
                     createTable.append("  ");
-                    createTable.append(column.name());
+                    createTable.append(column.atributeName());
                     createTable.append(" ");
                     createTable.append(column.type());
                     createTable.append(",\n");

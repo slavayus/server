@@ -29,6 +29,7 @@ public class ServerLoader {
                 System.out.println(serverSocket);
                 ByteBuffer dataFromClient = ByteBuffer.allocate(8 * 1024 * 1024);
                 while (true) {
+
                     SocketAddress socketAddress = serverSocket.receive(dataFromClient);
 
                     container = containerElement.computeIfAbsent(socketAddress.toString(), k -> {
